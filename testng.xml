@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Suite">
+  <test name="Regression Tests" parallel="methods" thread-count="5">
+    <classes>
+      <class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_001"/>
+      <class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_002"/>
+      <!--<class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_003"/> -->
+      <!--<class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_004"/> -->
+      <!--<class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_005"/> -->
+    </classes>
+  </test> <!-- Test -->
+</suite> <!-- Suite -->
