@@ -10,7 +10,7 @@ public class RecipeTestBatch_005  extends RecipeScraperBase
 	public void TestBatch_005()
 	{
 		//Call base method
-		ExcelFileName = "RecipeBook_5"; //Read from Property file
+		ExcelFileName = "RecipeBook_5.xls"; //Read from Property file
 		//Scrape(21,26);//Read from Property file
 		Scrape(4,4);
 	}

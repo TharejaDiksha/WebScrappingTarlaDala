@@ -10,7 +10,7 @@ public class RecipeTestBatch_002  extends RecipeScraperBase
 	public void TestBatch_002()
 	{
 		//Call base method
-		ExcelFileName = "RecipeBook_B";//Read from Property File
+		ExcelFileName = "RecipeBook_B.xls";//Read from Property File
 		//Scrape(6,10);//Read from Property File
 		int a = (int)('A');
 		int start = (int)('B') - a;
