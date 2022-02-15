@@ -1,6 +1,7 @@
 package com.WebScrappingTarlaDala.TestCases;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.sql.Date;
 import java.text.DateFormat;
@@ -11,8 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFWorkbookFactory;
 import org.apache.poi.ss.usermodel.CellBase;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.xml.security.keys.content.KeyValue;
@@ -36,7 +41,8 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class RecipeScraperBase {
 	
-	static WebDriver driver;
+	//static WebDriver driver;
+	WebDriver driver;
 	static String baseUrl = "https://www.tarladalal.com/";
 	int recipeCount = 0;
 	char startPage = 'A';
@@ -46,9 +52,15 @@ public class RecipeScraperBase {
 	String pageindex = "&pageindex=";
 	String recipeA2ZUrl = "/RecipeAtoZ.aspx?";
 	public String ExcelFileName = "";
+	int rowNumber = 1;
 
 	@BeforeTest
 	public void Setup() throws InterruptedException
+	{
+		createDriver();
+	}
+	
+	public void createDriver()
 	{
 		WebDriverManager.chromedriver().setup();
 		ChromeOptions options = new ChromeOptions();
@@ -56,16 +68,15 @@ public class RecipeScraperBase {
 		//options.setPageLoadStrategy(PageLoadStrategy.NONE);
 		driver = new ChromeDriver(options);
 		//driver = new ChromeDriver();
-		Navigate(baseUrl);
 		driver.manage().window().maximize();
 		//driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
 		//driver.manage().timeouts().implicitlyWait(10,TimeUnit.SECONDS);
 	}
 	
-	@AfterClass
+	@AfterTest
 	public void afterClass()
 	{
-		driver.quit();
+		driver.close();
 	}
 
 
@@ -75,6 +86,7 @@ public class RecipeScraperBase {
 		try {
 			
 			Navigate(baseUrl);
+			
 
 			//Navigate all recipe pages for a range of indexes/alphabets
 			NavigateAToZPages(startIndex, endIndex);
@@ -83,23 +95,35 @@ public class RecipeScraperBase {
 		{
 			System.out.print(ex.getMessage());
 		}
-		finally
-		{
-			driver.quit();
-		}
+		
 
 	}
+	
+	
 
 	private void Navigate(String url) throws InterruptedException
 	{
+		int sleepTimeMs = 500;
 		try {
+			if(driver == null)
+			{
+				System.out.println("driver is null");
+				Setup();
+				return;
+			}
 			driver.get(url);
 		}
 		catch(TimeoutException timeout)
 		{
-			Thread.sleep(1000);
+			System.out.println("Timeout exception occrued : " + timeout.getMessage());
+			Thread.sleep(sleepTimeMs);
 			driver.navigate().refresh();
-			driver.navigate().to(url);
+			Thread.sleep(sleepTimeMs);
+			driver.get(url);
+		}
+		catch(Exception e)
+		{
+			System.out.println("exception occrued : " + e.getMessage());
 		}
 	}
 
@@ -116,8 +140,12 @@ public class RecipeScraperBase {
 			// add all recipe urls in the list
 			recipeUrls.addAll(GetMultiPageUrls(firstPageIndex, aToZurl ));
 			
+			System.out.println("Total Recipies on page " + String.valueOf(pageAlphabet) + " = " + String.valueOf(recipeUrls.size()));
+			String fileName = "RecipeBook_New.xlsx";
 			//get the recipe details from each recipe url	
-			GetRecipeDetails(recipeUrls,String.valueOf(pageAlphabet));
+			GetRecipeDetails(recipeUrls, ExcelFileName,String.valueOf(pageAlphabet));
+			
+			//recipeCount = 0;
 			
 		}
 
@@ -142,7 +170,8 @@ public class RecipeScraperBase {
 		
 		System.out.println("getting multi page recipe urls");
 
-		for(int index = ++nextPageIndex ; index <= totalSubPages; index++)
+		//for(int index = ++nextPageIndex ; index <= totalSubPages; index++)//check1
+		for(int index = nextPageIndex ; index <= totalSubPages; index++)//check1
 		{
 			Navigate(aToZurl + index);
 
@@ -156,10 +185,11 @@ public class RecipeScraperBase {
 
 	// Get Recipe details from the recipe page navigating to the urls
 	
-	private void GetRecipeDetails(List<String> recipeUrls, String pageIndex) throws InterruptedException {
+	private void GetRecipeDetails(List<String> recipeUrls, String fileName, String sheetName) throws InterruptedException {
 
 		List<Recipe> recipeList = new ArrayList<Recipe>();
 		int maxListSize = 10;
+		
 
 		for(int i = 0 ; i < recipeUrls.size(); i++)
 		{
@@ -167,14 +197,8 @@ public class RecipeScraperBase {
 			String url = recipeUrls.get(i);
 
 			try {
+				
 				Navigate(url);
-				String cooktime,servings;
-				cooktime = GetCooktime();
-				servings= GetServings();
-				if (cooktime.equals("0 mins") &&(!(servings.contains("servings"))))
-				{ //Do not scrape data for this SubURL
-					continue;
-				}
 				recipeCount++;
 				
 				Recipe recipe = new Recipe(recipeCount);
@@ -196,20 +220,27 @@ public class RecipeScraperBase {
 				// Clear the list for the next set of recipes
 				if(recipeList.size() % maxListSize == 0)
 				{
-					ConsoleLog(recipeList);
-					//ExcelWrite(recipeList,pageIndex);
-					//recipeList.clear();
+					//ConsoleLog(recipeList);
+					System.out.println("Writing data to excel file...");
+					ExcelWrite(recipeList,fileName,sheetName,rowNumber);
+					rowNumber += maxListSize;
+					recipeList.clear();
 				}
 				
+				System.out.print("Recipe Number = " + String.valueOf(recipe.getId()) + "\n");
+				System.out.print("Recipe Url = " + recipe.getLinkToRecipe() + "\n");
 				
 			}
 			catch(Exception ex)
 			{
 				System.out.println(ex.getMessage());
-				if (ex.equals("Timed out receiving message from renderer: 300.000"))
-						Navigate(url);
-						Thread.sleep(2000);
+				Thread.sleep(500);
+				//if (ex.equals("Timed out receiving message from renderer: 300.000"))
+				//{
+				//Navigate(url);
 			}
+						
+			
 			//System.out.print(recipeText);
 			
 			
@@ -219,7 +250,7 @@ public class RecipeScraperBase {
 		if(recipeList.size() > 0)
 		{
 			// Write recipe data for the page to the file if any more left
-			ExcelWrite(recipeList,pageIndex);
+			ExcelWrite(recipeList,fileName, sheetName,rowNumber);
 		}
 
 
@@ -298,6 +329,24 @@ public class RecipeScraperBase {
 		
 		return retValue;
 	}
+	
+	//Checking BakeTime for Recipe
+	public String GetBaketime()
+	{
+		String retValue = "";
+		try {
+			WebElement cooktime = driver.findElement(By.cssSelector("#ctl00_cntrightpanel_pnlRecipeScale > section > p:nth-child(4) > time:nth-child(2)"));
+			return cooktime.getText();
+		}
+		catch(NoSuchElementException e)
+		{
+			System.out.println("CookTime not found");
+		}
+		
+		return retValue;
+	}
+	
+	
 	
 	public String GetServings()
 	{
@@ -417,9 +466,16 @@ public class RecipeScraperBase {
 
 				WebElement element = rcc_rcpcores.get(i);
 				WebElement tagA = element.findElement(By.tagName("a"));
-				if(tagA != null)
+				//if(tagA != null)///check1 uncomment
+				//	urls.add(tagA.getAttribute("href"));check1 uncomment
+				if(tagA != null)  //check start
+				{
+					String url= tagA.getAttribute("href");
+					if (url.contains("arrangements"))
+						continue;
+					
 					urls.add(tagA.getAttribute("href"));
-
+				}//check1 ends
 			}
 
 		}
@@ -434,9 +490,11 @@ public class RecipeScraperBase {
 
 	private int GetSubPagesCount() {
 		List<WebElement> pagelinks = driver.findElements(By.cssSelector(".respglink"));
-		int totalSubPages = -1;
+		int totalSubPages = 1;
 
 		int totalElements = pagelinks.size(); 
+		if(totalElements <= 1)
+			return totalSubPages;
 		String lastPage = pagelinks.get(totalElements-1).getText();
 
 		totalSubPages = Integer.parseInt(lastPage); 
@@ -446,56 +504,104 @@ public class RecipeScraperBase {
 	}
 	
 	
-	public void ExcelWrite(List<Recipe> recipeList, String pageAlphabet) {
-		
-		File file = new  File(ExcelFileName+"_"+pageAlphabet+".xlsx");
-		String workSheetName = "RecipeData";
-		//create header
-		XSSFWorkbook wb = new XSSFWorkbook();
-		
-		XSSFSheet sh = wb.createSheet(workSheetName);
-				
-		int rowCount = sh.getPhysicalNumberOfRows();
-		
-		//if(rowCount <= 1)
-		{
-			//Add header row
-			sh.createRow(0).createCell(0).setCellValue("Id");	
-			sh.createRow(0).createCell(1).setCellValue("Title");	
-			sh.getRow(0).createCell(2).setCellValue("Category");
-			sh.getRow(0).createCell(3).setCellValue("Ingredients");
-			sh.getRow(0).createCell(4).setCellValue("RecipeSteps");
-			sh.getRow(0).createCell(5).setCellValue("NutrientValues");
-			sh.getRow(0).createCell(6).setCellValue("RecipeImageLink");
-			sh.getRow(0).createCell(7).setCellValue("LinkToRecipe");
-		}
-			
-		// create new rows for the list of recipes
-		for(int i = 0 ; i< recipeList.size(); i++)
-		{
-			Recipe recipe = recipeList.get(i);
-			Row row = sh.createRow(rowCount++);
-			row.createCell(0).setCellValue(recipe.getId());
-			row.createCell(1).setCellValue(recipe.getTitle());
-			row.createCell(2).setCellValue(recipe.getCategory());
-			row.createCell(3).setCellValue(recipe.getIngredients());
-			row.createCell(4).setCellValue(recipe.getRecipeSteps());
-			row.createCell(5).setCellValue(recipe.getNutrientValues());
-			row.createCell(6).setCellValue(recipe.getRecipeImageLink());
-			row.createCell(7).setCellValue(recipe.getLinkToRecipe());
-			
-			
-		}
+	public void ExcelWrite(List<Recipe> recipeList, String fileName, String sheetName, int rowNumber) {
 		
 		try {
+			File file = new  File(fileName);
+			sheetName = "Recipes";
+			
+			FileInputStream inputStream = null;
+			XSSFWorkbook wb; 
+			XSSFSheet sh = null;
+			
+			if(!file.exists())
+			{
+				wb = new XSSFWorkbook();
+				
+				//Create new sheet
+				sh = wb.createSheet(sheetName);
+				
+				//Add header row
+				sh.createRow(0).createCell(0).setCellValue("Id");	
+				sh.createRow(0).createCell(1).setCellValue("Title");	
+				sh.getRow(0).createCell(2).setCellValue("Category");
+				sh.getRow(0).createCell(3).setCellValue("Ingredients");
+				sh.getRow(0).createCell(4).setCellValue("RecipeSteps");
+				sh.getRow(0).createCell(5).setCellValue("NutrientValues");
+				sh.getRow(0).createCell(6).setCellValue("RecipeImageLink");
+				sh.getRow(0).createCell(7).setCellValue("LinkToRecipe");
+			}
+			else
+			{
+				// open existing workbook
+	
+				inputStream = new FileInputStream(file);
+		        wb =  new XSSFWorkbook(inputStream);
+		        System.out.println("Active sheet Index = " + wb.getActiveSheetIndex());
+		        sh = wb.getSheetAt(wb.getActiveSheetIndex());
+		        /*
+		        for(int retry = 0 ; retry < 5 ; retry++)
+		        {
+		        	//sh =  wb.getSheet(sheetName);
+		        	sh = wb.getSheetAt(wb.getActiveSheetIndex());
+		        	if(sh!=null)
+		        		break;
+		        	System.out.println("Sheet not found sheet name = " + sheetName);
+		        	
+		        	Thread.sleep(100 * (retry+1));
+		        }*/
+				
+				if(sh == null)
+				{
+					System.out.println("Sheet not found sheet name = " + sheetName);
+					
+					return;
+					//Create new sheet
+					//sh = wb.createSheet(sheetName);
+					
+					//Add header row
+					/*
+					sh.createRow(0).createCell(0).setCellValue("Id");	
+					sh.createRow(0).createCell(1).setCellValue("Title");	
+					sh.getRow(0).createCell(2).setCellValue("Category");
+					sh.getRow(0).createCell(3).setCellValue("Ingredients");
+					sh.getRow(0).createCell(4).setCellValue("RecipeSteps");
+					sh.getRow(0).createCell(5).setCellValue("NutrientValues");
+					sh.getRow(0).createCell(6).setCellValue("RecipeImageLink");
+					sh.getRow(0).createCell(7).setCellValue("LinkToRecipe");*/
+				}
+			}
+			
+			
+					
+			// create new rows for the list of recipes
+			for(int i = 0 ; i< recipeList.size(); i++)
+			{
+				Recipe recipe = recipeList.get(i);
+				XSSFRow row = sh.createRow(rowNumber + i);
+				row.createCell(0).setCellValue(recipe.getId());
+				row.createCell(1).setCellValue(recipe.getTitle());
+				row.createCell(2).setCellValue(recipe.getCategory());
+				row.createCell(3).setCellValue(recipe.getIngredients());
+				row.createCell(4).setCellValue(recipe.getRecipeSteps());
+				row.createCell(5).setCellValue(recipe.getNutrientValues());
+				row.createCell(6).setCellValue(recipe.getRecipeImageLink());
+				row.createCell(7).setCellValue(recipe.getLinkToRecipe());
+				
+				
+			}
+		
+		
+			// Append if the file exists
 			FileOutputStream fos = new FileOutputStream(file);
 			wb.write(fos);
 			wb.close();
+			if(inputStream != null)
+				inputStream.close();
 			
 			System.out.println("Recipe written to excel successfully ");
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 		
 	}
