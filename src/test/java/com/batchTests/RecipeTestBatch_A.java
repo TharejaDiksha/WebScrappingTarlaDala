@@ -1,15 +1,20 @@
-package com.WebScrappingTarlaDala.TestCases;
+package com.batchTests;
 
+import com.WebScrappingTarlaDala.TestCases.RecipeScraperBase;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.File;
 
-public class RecipeTestBatch_001  extends RecipeScraperBase
+
+public class RecipeTestBatch_A extends RecipeScraperBase
 {
 
 	@Test //(priority=2, dependsOnMethods={"createDriver"}  )
 	public void TestBatch_001()
 	{
 		//Call base method
+
 		ExcelFileName = "RecipeBook_1.xls";//Read from Property File
 		int a = (int)('A');
 		int start = (int)('Y') - a;
@@ -22,5 +27,6 @@ public class RecipeTestBatch_001  extends RecipeScraperBase
 		Scrape(start, end);
 		//Scrape((int)('W'),(int)('W'));//Read from Property File
 	}
+
 	
 }

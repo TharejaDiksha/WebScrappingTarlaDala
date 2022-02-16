@@ -3,11 +3,9 @@
 <suite name="Suite">
   <test name="Regression Tests" parallel="methods" thread-count="5">
     <classes>
-      <class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_001"/>
-      <class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_002"/>
-      <!--<class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_003"/> -->
-      <!--<class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_004"/> -->
-      <!--<class name="com.WebScrappingTarlaDala.TestCases.RecipeTestBatch_005"/> -->
+     <class name="com.batchTests.RecipeTestBatch_E"/>
+      <class name="com.batchTests.RecipeTestBatch_E"/>
+
     </classes>
   </test> <!-- Test -->
 </suite> <!-- Suite -->

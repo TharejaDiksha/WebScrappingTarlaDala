@@ -1,16 +1,10 @@
 package com.WebScrappingTarlaDala.TestCases;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -43,7 +37,7 @@ public class RecipeScraperBase {
 	
 	//static WebDriver driver;
 	WebDriver driver;
-	static String baseUrl = "https://www.tarladalal.com/";
+	//static String baseUrl = "https://www.tarladalal.com/";
 	int recipeCount = 0;
 	char startPage = 'A';
 	int firstPageIndex = 1;
@@ -53,6 +47,20 @@ public class RecipeScraperBase {
 	String recipeA2ZUrl = "/RecipeAtoZ.aspx?";
 	public String ExcelFileName = "";
 	int rowNumber = 1;
+	static Properties prop;
+	public RecipeScraperBase() {
+
+		try {
+			prop = new Properties();
+			FileInputStream ip = new FileInputStream("./src/main/resources/int.properties");
+			prop.load(ip);
+		} catch(FileNotFoundException e) {
+			e.printStackTrace();
+		} catch(IOException e) {
+			System.out.println("Unable to read config file");
+		}
+	}
+
 
 	@BeforeTest
 	public void Setup() throws InterruptedException
@@ -85,7 +93,7 @@ public class RecipeScraperBase {
 	{
 		try {
 			
-			Navigate(baseUrl);
+			Navigate(prop.getProperty("baseUrl"));
 			
 
 			//Navigate all recipe pages for a range of indexes/alphabets
@@ -135,7 +143,7 @@ public class RecipeScraperBase {
 		{
 			List<String> recipeUrls = new ArrayList<String>();
 			char pageAlphabet = (char)((int)startPage + i);
-			String aToZurl = baseUrl + recipeA2ZUrl + beginswith + pageAlphabet + pageindex;
+			String aToZurl = prop.getProperty("baseUrl") + recipeA2ZUrl + beginswith + pageAlphabet + pageindex;
 			
 			// add all recipe urls in the list
 			recipeUrls.addAll(GetMultiPageUrls(firstPageIndex, aToZurl ));
@@ -507,7 +515,8 @@ public class RecipeScraperBase {
 	public void ExcelWrite(List<Recipe> recipeList, String fileName, String sheetName, int rowNumber) {
 		
 		try {
-			File file = new  File(fileName);
+
+			File file = new  File(prop.getProperty("ExcelFilePath")+fileName);
 			sheetName = "Recipes";
 			
 			FileInputStream inputStream = null;

@@ -1,9 +1,10 @@
-package com.WebScrappingTarlaDala.TestCases;
+package com.batchTests;
 
+import com.WebScrappingTarlaDala.TestCases.RecipeScraperBase;
 import org.testng.annotations.Test;
 
 
-public class RecipeTestBatch_003  extends RecipeScraperBase
+public class RecipeTestBatch_C extends RecipeScraperBase
 {
 
 	@Test(priority=2, dependsOnMethods={"createDriver"}  )
