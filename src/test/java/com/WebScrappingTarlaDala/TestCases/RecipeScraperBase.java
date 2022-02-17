@@ -123,7 +123,7 @@ public class RecipeScraperBase {
 		}
 		catch(TimeoutException timeout)
 		{
-			System.out.println("Timeout exception occrued : " + timeout.getMessage());
+			System.out.println("Timeout exception occured : " + timeout.getMessage());
 			Thread.sleep(sleepTimeMs);
 			driver.navigate().refresh();
 			Thread.sleep(sleepTimeMs);

@@ -4,7 +4,9 @@
   <test name="Regression Tests" parallel="methods" thread-count="5">
     <classes>
      <class name="com.batchTests.RecipeTestBatch_E"/>
-      <class name="com.batchTests.RecipeTestBatch_E"/>
+      <class name="com.batchTests.RecipeTestBatch_I"/>
+        <class name="com.batchTests.RecipeTestBatch_J"/>
+
 
     </classes>
   </test> <!-- Test -->
