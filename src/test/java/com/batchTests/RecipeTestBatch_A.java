@@ -26,6 +26,7 @@ public class RecipeTestBatch_A extends RecipeScraperBase
 		end = (int)('U') - a;
 		Scrape(start, end);
 		//Scrape((int)('W'),(int)('W'));//Read from Property File
+		System.out.println("Test");
 	}
 
 	
